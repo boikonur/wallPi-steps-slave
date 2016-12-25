@@ -3,6 +3,7 @@
 Chrono mainTimer(Chrono::SECONDS ); //60min timer
 Chrono stepTimer(Chrono::MILLIS ); //20min timer
 
+#define DIST_THRESH 200
 //#define master
 #define slave
 
@@ -31,7 +32,9 @@ Chrono stepTimer(Chrono::MILLIS ); //20min timer
 
 #define SYNC_INPUT_PIN 9
 #define SYNC_OUTPUT_PIN 8
-
+boolean enabled_game = false;
+int steps_stage=0;
+int step_index=0;
 void setup() {
 
 
@@ -65,71 +68,71 @@ void setup() {
 
 void loop() {
 
-if( enabled_game == false)
-{
-  if(digitalRead(BUTTON_PIN) == LOW)
+  if ( enabled_game == false)
   {
+    if (digitalRead(BUTTON_PIN) == LOW)
+    {
       delay(100);
-      if(digitalRead(BUTTON_PIN) == LOW)
+      if (digitalRead(BUTTON_PIN) == LOW)
       {
-          digitalWrite(BUTTON_LED_PIN, LOW);
-          enabled_game=true;
-          steps_stage=0;
-      }
-  }
-}
-
-if( enabled_game == true)
-{
-
-  switch (steps_stage) {
-    case 0:
-    if(digitalRead(SYNC_INPUT_PIN) == HIGH)
-    {
-      if(digitalRead(SYNC_INPUT_PIN) == HIGH)
-      {
-        steps_stage=1;
-        digitalWrite(SYNC_OUTPUT_PIN, HIGH);
+        digitalWrite(BUTTON_LED_PIN, LOW);
+        enabled_game = true;
+        steps_stage = 0;
       }
     }
-    break;
-    case 1:
-      delay(1000);
-      digitalWrite(SYNC_OUTPUT_PIN, LOW);
-      steps_stage=2;
-    break;
-
-    case 2:
-    if(digitalRead(SYNC_INPUT_PIN) == HIGH)
-    {
-      delay(100)
-      if(digitalRead(SYNC_INPUT_PIN) == HIGH)
-      {
-
-        step_index++;
-      }
-    }
-    break;
-    case 3:
-      if(readStep[step_index]){
-        digitalWrite(SYNC_OUTPUT_PIN, HIGH);
-        delay(100);
-          steps_stage=4;
-      }
-
-    case 4:
-    digitalWrite(SYNC_OUTPUT_PIN, LOW);
-    steps_stage=2;
-    break;
-
-    case 5: break;
-    case 6: break;
-    case 7: break;
-    case 8: break;
-
   }
 
-}
+  if ( enabled_game == true)
+  {
+
+    switch (steps_stage) {
+      case 0:
+        if (digitalRead(SYNC_INPUT_PIN) == HIGH)
+        {
+          if (digitalRead(SYNC_INPUT_PIN) == HIGH)
+          {
+            steps_stage = 1;
+            digitalWrite(SYNC_OUTPUT_PIN, HIGH);
+          }
+        }
+        break;
+      case 1:
+        delay(1000);
+        digitalWrite(SYNC_OUTPUT_PIN, LOW);
+        steps_stage = 2;
+        break;
+
+      case 2:
+        if (digitalRead(SYNC_INPUT_PIN) == HIGH)
+        {
+          delay(100);
+          if (digitalRead(SYNC_INPUT_PIN) == HIGH)
+          {
+
+            step_index++;
+          }
+        }
+        break;
+      case 3:
+        if (readStep[step_index]) {
+          digitalWrite(SYNC_OUTPUT_PIN, HIGH);
+          delay(100);
+          steps_stage = 4;
+        }
+
+      case 4:
+        digitalWrite(SYNC_OUTPUT_PIN, LOW);
+        steps_stage = 2;
+        break;
+
+      case 5: break;
+      case 6: break;
+      case 7: break;
+      case 8: break;
+
+    }
+
+  }
 
 
 
@@ -138,4 +141,16 @@ if( enabled_game == true)
 
 bool readStep(int step_num)
 {
+
+  switch (step_num) {
+    case 0: if (analogRead(STEP_SENSOR_PIN1) < DIST_THRESH) return 1;  break;
+    case 1: if (analogRead(STEP_SENSOR_PIN2) < DIST_THRESH) return 1;  break;
+    case 2: if (analogRead(STEP_SENSOR_PIN3) < DIST_THRESH) return 1;  break;
+    case 3: if (analogRead(STEP_SENSOR_PIN4) < DIST_THRESH) return 1; break;
+    case 4: if (analogRead(STEP_SENSOR_PIN5) < DIST_THRESH) return 1; break;
+    case 5: if (analogRead(STEP_SENSOR_PIN6) < DIST_THRESH) return 1;  break;
+    default: break;
+
+  }
+
 }

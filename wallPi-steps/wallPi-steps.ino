@@ -76,6 +76,7 @@ void loop() {
       if (digitalRead(BUTTON_PIN) == LOW)
       {
         digitalWrite(BUTTON_LED_PIN, LOW);
+        digitalWrite(SYNC_OUTPUT_PIN, HIGH);
         enabled_game = true;
         steps_stage = 0;
       }
@@ -89,10 +90,11 @@ void loop() {
       case 0:
         if (digitalRead(SYNC_INPUT_PIN) == HIGH)
         {
+          delay(100);
           if (digitalRead(SYNC_INPUT_PIN) == HIGH)
           {
             steps_stage = 1;
-            digitalWrite(SYNC_OUTPUT_PIN, HIGH);
+            digitalWrite(SYNC_OUTPUT_PIN, LOW);
           }
         }
         break;
@@ -108,13 +110,16 @@ void loop() {
           delay(100);
           if (digitalRead(SYNC_INPUT_PIN) == HIGH)
           {
-
             step_index++;
+            steps_stage = 3;
+            if(step_index >5)
+            step_index=0;
           }
         }
         break;
       case 3:
-        if (readStep[step_index]) {
+        if (readStep[step_index])
+        {
           digitalWrite(SYNC_OUTPUT_PIN, HIGH);
           delay(100);
           steps_stage = 4;

@@ -1,6 +1,6 @@
 
 /*
-slave
+  slave
 
 */
 
@@ -36,99 +36,105 @@ Chrono stepTimer(Chrono::MILLIS ); //1000 ms timer
 #define STEP_SENSOR_PIN2 A1
 #define STEP_SENSOR_PIN3 A2
 #define STEP_SENSOR_PIN4 A3
-#define STEP_SENSOR_PIN5 A6
-#define STEP_SENSOR_PIN6 A7
+#define STEP_SENSOR_PIN5 A4
+#define STEP_SENSOR_PIN6 A5
 
 #define SYNC_INPUT_PIN 9
 #define SYNC_OUTPUT_PIN 8
 
 boolean enabled_game = false;
-int steps_stage=0;
-int step_index=0;
+int steps_stage = 0;
+int step_index = 0;
+int correctSteps = 0;
+int stepAttempts = 0;
 void setup() {
-        pinMode(BUTTON_PIN, INPUT_PULLUP);
-        pinMode(SYNC_INPUT_PIN, INPUT);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(SYNC_INPUT_PIN, INPUT);
 
-        pinMode(BUTTON_LED_PIN, OUTPUT);
-        pinMode(SYNC_OUTPUT_PIN, OUTPUT);
-        pinMode(STEP_LED_PIN1, OUTPUT);
-        pinMode(STEP_LED_PIN2, OUTPUT);
-        pinMode(STEP_LED_PIN3, OUTPUT);
-        pinMode(STEP_LED_PIN4, OUTPUT);
-        pinMode(STEP_LED_PIN5, OUTPUT);
-        pinMode(STEP_LED_PIN6, OUTPUT);
+  pinMode(BUTTON_LED_PIN, OUTPUT);
+  pinMode(SYNC_OUTPUT_PIN, OUTPUT);
+  pinMode(STEP_LED_PIN1, OUTPUT);
+  pinMode(STEP_LED_PIN2, OUTPUT);
+  pinMode(STEP_LED_PIN3, OUTPUT);
+  pinMode(STEP_LED_PIN4, OUTPUT);
+  pinMode(STEP_LED_PIN5, OUTPUT);
+  pinMode(STEP_LED_PIN6, OUTPUT);
 
-        digitalWrite(BUTTON_LED_PIN, HIGH);
-        digitalWrite(SYNC_OUTPUT_PIN, LOW);
+  digitalWrite(BUTTON_LED_PIN, HIGH);
+  digitalWrite(SYNC_OUTPUT_PIN, LOW);
 
-        digitalWrite(STEP_LED_PIN1, LOW);
-        digitalWrite(STEP_LED_PIN2, LOW);
-        digitalWrite(STEP_LED_PIN3, LOW);
-        digitalWrite(STEP_LED_PIN4, LOW);
-        digitalWrite(STEP_LED_PIN5, LOW);
-        digitalWrite(STEP_LED_PIN6, LOW);
+  digitalWrite(STEP_LED_PIN1, LOW);
+  digitalWrite(STEP_LED_PIN2, LOW);
+  digitalWrite(STEP_LED_PIN3, LOW);
+  digitalWrite(STEP_LED_PIN4, LOW);
+  digitalWrite(STEP_LED_PIN5, LOW);
+  digitalWrite(STEP_LED_PIN6, LOW);
 
-        Serial.begin(9600);
-        while (!Serial) {
-                ; // wait for serial port to connect. Needed for native USB port only
-        }
+  Serial.begin(9600);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+  Serial.println("INIT");
 }
 
 void loop() {
 
-        if ( enabled_game == false)
-        {
-                if (digitalRead(BUTTON_PIN) == LOW)
-                {
-                        delay(100);
-                        if (digitalRead(BUTTON_PIN) == LOW)
-                        {
-                                digitalWrite(BUTTON_LED_PIN, LOW);
-                                digitalWrite(SYNC_OUTPUT_PIN, HIGH);
-                                enabled_game = true;
-                                steps_stage = 0;
-                        }
-                }
-        }
+  if ( enabled_game == false)
+  {
+    if (digitalRead(BUTTON_PIN) == LOW)
+    {
+      delay(100);
+      if (digitalRead(BUTTON_PIN) == LOW)
+      { 
+         
+        Serial.println("Button pressed");
+        digitalWrite(BUTTON_LED_PIN, LOW);
+        digitalWrite(SYNC_OUTPUT_PIN, HIGH);
+        enabled_game = true;
+        steps_stage = 0;
+      }
+    }
+  }
 
-        if ( enabled_game == true)
-        {
-          if(stepsGame())
-          {            
-             digitalWrite(SYNC_OUTPUT_PIN, LOW);
-             enabled_game=false;
-             endBlink();
-          }
+  if ( enabled_game == true)
+  {
+    if (stepsGame())
+    {
+      Serial.println("END GAME after 10s");
+      digitalWrite(SYNC_OUTPUT_PIN, LOW);
+      enabled_game = false;
+      endBlink();
+    }
 
-        }
+  }
 }
 
 
-void endBlink(){
- for(int i=0; i<5 ; i++)
- {
+void endBlink() {
+  for (int i = 0; i < 5 ; i++)
+  {
     digitalWrite(BUTTON_LED_PIN, HIGH);
     delay(100);
     digitalWrite(BUTTON_LED_PIN, LOW);
     delay(100);
- }
-   digitalWrite(BUTTON_LED_PIN, HIGH);
+  }
+  digitalWrite(BUTTON_LED_PIN, HIGH);
 }
 
-int stepsGame(){
-
+int stepsGame() {
+  int result = 0;
   switch (steps_stage) {
 
     case 0:
-      step_index=0;
+      step_index = 0;
       correctSteps = 0;
       stepAttempts = 0;
-      for(int i=0; i<NUM_STEPS ; i++)
-    {
-      offStepLed(i);
-    }
-    steps_stage=1;
-    break;
+      for (int i = 0; i < NUM_STEPS ; i++)
+      {
+        offStepLed(i);
+      }
+      steps_stage = 1;
+      break;
 
     case 1:
       if (digitalRead(SYNC_INPUT_PIN) == HIGH)
@@ -136,15 +142,9 @@ int stepsGame(){
         delay(100);
         if (digitalRead(SYNC_INPUT_PIN) == HIGH)
         {
+          Serial.println("game enab;led by master");
           gameTimer.restart();
           stepTimer.restart();
-
-           digitalWrite(WRITE_EN_PIN, RS485Transmit);
-           delay(100);
-           Serial.print(startGameB);
-           Serial.print("\n");
-           delay(100);
-           digitalWrite(WRITE_EN_PIN, RS485Receive);
 
           steps_stage = 2;
           digitalWrite(SYNC_OUTPUT_PIN, LOW);
@@ -152,73 +152,72 @@ int stepsGame(){
       }
       break;
     case 2:
-      delay(1000);
-      digitalWrite(SYNC_OUTPUT_PIN, HIGH);
+
+      onStepLed(step_index);
       steps_stage = 3;
       break;
 
     case 3:
 
-    if (gameTimer.hasPassed(120))
-    {
-      steps_stage = 4;
-      break;
-    }
+      if (gameTimer.hasPassed(120))
+      {
+        steps_stage = 4;
+        break;
+      }
 
-    if (stepTimer.hasPassed(1000)) //change target on 1,4s?
-     {
-       offStepLed(step_index);
+      if (stepTimer.hasPassed(1000)) //change target on 1,4s?
+      {
+        offStepLed(step_index);
 
-       step_index++;
-       onStepLed(step_index);
-       digitalWrite(SYNC_OUTPUT_PIN, HIGH);
-       stepAttempts++;
-       if (step_index > NUM_STEPS)
-         step_index = 0;
+        step_index++;
+        onStepLed(step_index);
+        stepAttempts++;
+        if (step_index > NUM_STEPS)
+          step_index = 0;
+    stepTimer.restart();
 
-       steps_stage = 2;
-     }
-     else
+        steps_stage = 2;
+      }
+      else
 
         if (readStep(step_index))
         {
-              if (readStep(step_index))
-            {
-              stepBlink(step_index);
-              offStepLed(step_index);
-              //targetTimer.restart();
-              //Serial.println("hit");
-              if (digitalRead(SYNC_INPUT_PIN) == HIGH)
-              {
-                delay(100);
-                if (digitalRead(SYNC_INPUT_PIN) == HIGH)
-                {
-              step_index++;
+          if (readStep(step_index))
+          {
+            digitalWrite(SYNC_OUTPUT_PIN, HIGH);
+            stepBlink(step_index);
+            digitalWrite(SYNC_OUTPUT_PIN, LOW);
+            offStepLed(step_index);
+            //targetTimer.restart();
+            //Serial.println("hit");
 
-              if (step_index > NUM_STEPS)
-                step_index = 0;
-              correctSteps++;
-            }
+            step_index++;
+
+            if (step_index > NUM_STEPS)
+              step_index = 0;
+            correctSteps++;
           }
-            }
         }
       break;
     case 4:
 
-    steps_stage = 0;
-     if(correctSteps<=stepAttempts)
-     {
-       result = map(correctSteps, 0, stepAttempts,MIN_STEPS_GAME ,MAX_STEPS_GAME);
-     }else
-     result= MAX_STEPS_GAME-1;
+      Serial.println(stepAttempts);
+      Serial.println(correctSteps);
+      steps_stage = 0;
+      if (correctSteps <= stepAttempts)
+      {
+        result = map(correctSteps, 0, stepAttempts, MIN_STEPS_GAME , MAX_STEPS_GAME);
 
-     for (int i = 0; i < NUM_STEPS; i++)
-     {
-       offStepLed(i);
-     }
-     digitalWrite(SYNC_OUTPUT_PIN, LOW);
-     return result;
-break;
+      } else
+        result = MAX_STEPS_GAME - 1;
+
+      for (int i = 0; i < NUM_STEPS; i++)
+      {
+        offStepLed(i);
+      }
+      digitalWrite(SYNC_OUTPUT_PIN, LOW);
+      return result;
+      break;
   }
   return 0;
 
@@ -244,20 +243,20 @@ void onStepLed(int step_num)
 {
   switch (step_num)
   {
-  case 0:  digitalWrite(STEP_LED_PIN1, HIGH); break;
-  case 1:  digitalWrite(STEP_LED_PIN2, HIGH); break;
-  case 2:  digitalWrite(STEP_LED_PIN3, HIGH); break;
-  case 3:  digitalWrite(STEP_LED_PIN4, HIGH); break;
-  case 4:  digitalWrite(STEP_LED_PIN5, HIGH); break;
-  case 5:  digitalWrite(STEP_LED_PIN6, HIGH); break;
-  default: break;
+    case 0:  digitalWrite(STEP_LED_PIN1, HIGH); break;
+    case 1:  digitalWrite(STEP_LED_PIN2, HIGH); break;
+    case 2:  digitalWrite(STEP_LED_PIN3, HIGH); break;
+    case 3:  digitalWrite(STEP_LED_PIN4, HIGH); break;
+    case 4:  digitalWrite(STEP_LED_PIN5, HIGH); break;
+    case 5:  digitalWrite(STEP_LED_PIN6, HIGH); break;
+    default: break;
   }
 }
 
 void offStepLed(int step_num)
 {
-    switch (step_num)
-    {
+  switch (step_num)
+  {
     case 0:  digitalWrite(STEP_LED_PIN1, LOW); break;
     case 1:  digitalWrite(STEP_LED_PIN2, LOW); break;
     case 2:  digitalWrite(STEP_LED_PIN3, LOW); break;
@@ -265,11 +264,11 @@ void offStepLed(int step_num)
     case 4:  digitalWrite(STEP_LED_PIN5, LOW); break;
     case 5:  digitalWrite(STEP_LED_PIN6, LOW); break;
     default: break;
-    }
+  }
 }
 
-void stepBlink(int num ){
-  for(int i=0; i<2; i++)
+void stepBlink(int num ) {
+  for (int i = 0; i < 2; i++)
   {
     onStepLed(num);
     delay(100);

@@ -1,7 +1,5 @@
-
 /*
   slave
-
 */
 
 #include <Arduino.h>
@@ -10,14 +8,13 @@
 Chrono gameTimer(Chrono::SECONDS ); //2min timer
 Chrono stepTimer(Chrono::MILLIS ); //1000 ms timer
 
-#define RS485Transmit    HIGH
-#define RS485Receive     LOW
 #define NUM_STEPS 6
 #define WRITE_EN_PIN 12
 #define DIST_THRESH 200
 
-#define MAX_STEPS_GAME 10
-#define MIN_STEPS_GAME 3
+//SYNC PINS
+#define SYNC_OUTPUT_PIN 8
+#define SYNC_INPUT_PIN 9
 
 //BUTTON PINS
 #define BUTTON_PIN 10
@@ -39,14 +36,12 @@ Chrono stepTimer(Chrono::MILLIS ); //1000 ms timer
 #define STEP_SENSOR_PIN5 A4
 #define STEP_SENSOR_PIN6 A5
 
-#define SYNC_INPUT_PIN 9
-#define SYNC_OUTPUT_PIN 8
-
 boolean enabled_game = false;
 int steps_stage = 0;
 int step_index = 0;
 int correctSteps = 0;
 int stepAttempts = 0;
+
 void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(SYNC_INPUT_PIN, INPUT);
@@ -85,13 +80,23 @@ void loop() {
     {
       delay(100);
       if (digitalRead(BUTTON_PIN) == LOW)
-      { 
-         
+      {
+
         Serial.println("Button pressed");
         digitalWrite(BUTTON_LED_PIN, LOW);
         digitalWrite(SYNC_OUTPUT_PIN, HIGH);
-        enabled_game = true;
-        steps_stage = 0;
+
+        if (digitalRead(SYNC_INPUT_PIN) == HIGH)
+        { delay(200);
+          if (digitalRead(SYNC_INPUT_PIN) == HIGH)
+          {
+            digitalWrite(BUTTON_LED_PIN, LOW);
+            enabled_game = true;
+            steps_stage = 0;
+          }
+        }
+        else
+          digitalWrite(BUTTON_LED_PIN, HIGH);
       }
     }
   }
@@ -122,13 +127,12 @@ void endBlink() {
 }
 
 int stepsGame() {
-  int result = 0;
+  
   switch (steps_stage) {
 
     case 0:
       step_index = 0;
-      correctSteps = 0;
-      stepAttempts = 0;
+
       for (int i = 0; i < NUM_STEPS ; i++)
       {
         offStepLed(i);
@@ -142,7 +146,7 @@ int stepsGame() {
         delay(100);
         if (digitalRead(SYNC_INPUT_PIN) == HIGH)
         {
-          Serial.println("game enab;led by master");
+          Serial.println("game synced with master");
           gameTimer.restart();
           stepTimer.restart();
 
@@ -165,7 +169,7 @@ int stepsGame() {
         break;
       }
 
-      if (stepTimer.hasPassed(1000)) //change target on 1,4s?
+      if (stepTimer.hasPassed(1000)) //change step on 1s
       {
         offStepLed(step_index);
 
@@ -174,7 +178,7 @@ int stepsGame() {
         stepAttempts++;
         if (step_index > NUM_STEPS)
           step_index = 0;
-    stepTimer.restart();
+        stepTimer.restart();
 
         steps_stage = 2;
       }
@@ -201,22 +205,13 @@ int stepsGame() {
       break;
     case 4:
 
-      Serial.println(stepAttempts);
-      Serial.println(correctSteps);
-      steps_stage = 0;
-      if (correctSteps <= stepAttempts)
-      {
-        result = map(correctSteps, 0, stepAttempts, MIN_STEPS_GAME , MAX_STEPS_GAME);
-
-      } else
-        result = MAX_STEPS_GAME - 1;
-
       for (int i = 0; i < NUM_STEPS; i++)
       {
         offStepLed(i);
       }
+      
       digitalWrite(SYNC_OUTPUT_PIN, LOW);
-      return result;
+      return 1;
       break;
   }
   return 0;

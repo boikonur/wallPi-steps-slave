@@ -74,6 +74,8 @@ void setup() {
 
 void loop() {
 
+//testStepSensors();
+//testStepLEDS();  
   if ( enabled_game == false)
   {
     if (digitalRead(BUTTON_PIN) == LOW)
@@ -87,7 +89,7 @@ void loop() {
         digitalWrite(SYNC_OUTPUT_PIN, HIGH);
 
         if (digitalRead(SYNC_INPUT_PIN) == HIGH)
-        { delay(200);
+        { delay(100);
           if (digitalRead(SYNC_INPUT_PIN) == HIGH)
           {
             digitalWrite(BUTTON_LED_PIN, LOW);
@@ -127,7 +129,7 @@ void endBlink() {
 }
 
 int stepsGame() {
-  
+
   switch (steps_stage) {
 
     case 0:
@@ -209,7 +211,7 @@ int stepsGame() {
       {
         offStepLed(i);
       }
-      
+
       digitalWrite(SYNC_OUTPUT_PIN, LOW);
       return 1;
       break;
@@ -238,12 +240,12 @@ void onStepLed(int step_num)
 {
   switch (step_num)
   {
-    case 0:  digitalWrite(STEP_LED_PIN1, HIGH); break;
-    case 1:  digitalWrite(STEP_LED_PIN2, HIGH); break;
+    case 5:  digitalWrite(STEP_LED_PIN1, HIGH); break;
+    case 0:  digitalWrite(STEP_LED_PIN2, HIGH); break;
     case 2:  digitalWrite(STEP_LED_PIN3, HIGH); break;
-    case 3:  digitalWrite(STEP_LED_PIN4, HIGH); break;
-    case 4:  digitalWrite(STEP_LED_PIN5, HIGH); break;
-    case 5:  digitalWrite(STEP_LED_PIN6, HIGH); break;
+    case 1:  digitalWrite(STEP_LED_PIN4, HIGH); break;
+    case 3:  digitalWrite(STEP_LED_PIN5, HIGH); break;
+    case 4:  digitalWrite(STEP_LED_PIN6, HIGH); break;
     default: break;
   }
 }
@@ -252,12 +254,12 @@ void offStepLed(int step_num)
 {
   switch (step_num)
   {
-    case 0:  digitalWrite(STEP_LED_PIN1, LOW); break;
-    case 1:  digitalWrite(STEP_LED_PIN2, LOW); break;
+    case 5:  digitalWrite(STEP_LED_PIN1, LOW); break;
+    case 0:  digitalWrite(STEP_LED_PIN2, LOW); break;
     case 2:  digitalWrite(STEP_LED_PIN3, LOW); break;
-    case 3:  digitalWrite(STEP_LED_PIN4, LOW); break;
-    case 4:  digitalWrite(STEP_LED_PIN5, LOW); break;
-    case 5:  digitalWrite(STEP_LED_PIN6, LOW); break;
+    case 1:  digitalWrite(STEP_LED_PIN4, LOW); break;
+    case 3:  digitalWrite(STEP_LED_PIN5, LOW); break;
+    case 4:  digitalWrite(STEP_LED_PIN6, LOW); break;
     default: break;
   }
 }
@@ -270,5 +272,37 @@ void stepBlink(int num ) {
     //Serial.println("hit");
     offStepLed(num);
     delay(50);
+  }
+}
+
+
+
+void testStepLEDS() {
+  while (1) {
+    for (int i = 0; i < 6; i++) {
+      Serial.println(i);
+      onStepLed(i);
+      delay(2000);
+      offStepLed(i);
+      delay(1000);
+    }
+  }
+}
+
+
+void testStepSensors() {
+  while (1) {
+    for (int i = 0; i < 6; i++) {
+     
+      boolean at= readStep(i);
+      if(at)
+      {
+         Serial.println(i);
+         delay(200);
+     
+      }
+      
+    }
+    delay(100);
   }
 }
